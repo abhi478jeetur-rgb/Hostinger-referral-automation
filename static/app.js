@@ -221,6 +221,10 @@ async function loadSettings() {
     if (settings.gemini_api_key) {
       document.getElementById("setting-gemini-key").value = settings.gemini_api_key;
     }
+    if (settings.apify_api_token) {
+      const apifyEl = document.getElementById("setting-apify-token");
+      if (apifyEl) apifyEl.value = settings.apify_api_token;
+    }
     if (settings.supabase_url) {
       document.getElementById("setting-supabase-url").value = settings.supabase_url;
     }
@@ -377,6 +381,7 @@ function initEventListeners() {
       const payload = {
         hostinger_referral_link: document.getElementById("setting-ref-link").value.trim(),
         gemini_api_key: document.getElementById("setting-gemini-key").value.trim(),
+        apify_api_token: (document.getElementById("setting-apify-token") ? document.getElementById("setting-apify-token").value.trim() : ""),
         supabase_url: document.getElementById("setting-supabase-url").value.trim(),
         supabase_key: document.getElementById("setting-supabase-key").value.trim(),
         min_delay_seconds: parseInt(document.getElementById("setting-min-delay").value || "180"),

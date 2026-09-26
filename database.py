@@ -103,6 +103,7 @@ def init_db():
     default_settings = {
         "hostinger_referral_link": "https://www.hostinger.com/in?REFERRALCODE=YYUADRASHKGH",
         "gemini_api_key": "",
+        "apify_api_token": "",
         "supabase_url": "",
         "supabase_key": "",
         "min_delay_seconds": "180",

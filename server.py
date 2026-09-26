@@ -131,6 +131,7 @@ class AccountAddRequest(BaseModel):
 class SettingsUpdateRequest(BaseModel):
     hostinger_referral_link: str
     gemini_api_key: Optional[str] = ""
+    apify_api_token: Optional[str] = ""
     supabase_url: Optional[str] = ""
     supabase_key: Optional[str] = ""
     min_delay_seconds: Optional[int] = 180
@@ -335,6 +336,8 @@ def update_settings(req: SettingsUpdateRequest):
     set_setting("hostinger_referral_link", req.hostinger_referral_link)
     if req.gemini_api_key is not None:
         set_setting("gemini_api_key", req.gemini_api_key)
+    if req.apify_api_token is not None:
+        set_setting("apify_api_token", req.apify_api_token)
     if req.supabase_url is not None:
         set_setting("supabase_url", req.supabase_url)
     if req.supabase_key is not None:

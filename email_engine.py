@@ -53,6 +53,23 @@ def get_next_available_account() -> Optional[Dict[str, Any]]:
     active_accounts.sort(key=lambda a: (a["daily_sent_count"], a["last_used_at"] or ""))
     return active_accounts[0]
 
+import socket
+
+def verify_recipient_domain(to_email: str) -> bool:
+    """Ensures recipient email domain actually exists via DNS before sending, preventing bounces."""
+    if not to_email or "@" not in to_email:
+        return False
+    domain = to_email.split("@")[1].strip().lower()
+    if "." not in domain or len(domain.split(".")[-1]) < 2:
+        return False
+    try:
+        ip = socket.gethostbyname(domain)
+        if not ip or ip.startswith("127.") or ip == "0.0.0.0":
+            return False
+        return True
+    except Exception:
+        return False
+
 def send_email_dispatch(
     to_email: str,
     subject: str,
@@ -64,7 +81,15 @@ def send_email_dispatch(
 ) -> Dict[str, Any]:
     """
     Dispatches email using the next available Gmail in the rotation pool.
+    Guarantees pre-flight recipient domain validation to avoid mailer-daemon bounces.
     """
+    # 0. Pre-flight bounce guard
+    if not verify_recipient_domain(to_email):
+        return {
+            "success": False,
+            "error": f"Recipient domain '{to_email}' does not exist on DNS. Aborted to protect sender reputation.",
+            "account_used": "reputation-guard"
+        }
     account = get_next_available_account()
     
     # If no live Gmail configured yet, operate in simulated preview mode so user can inspect workflow
