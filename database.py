@@ -140,20 +140,22 @@ def normalize_email(email: str) -> str:
     match = re.search(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", email)
     return match.group(0) if match else ""
 
-def is_duplicate(email: str, website: str = "") -> bool:
+def is_duplicate(email: str = "", website: str = "") -> bool:
     """Check if email or domain has ever been recorded in the database."""
-    clean_email = normalize_email(email)
-    domain = extract_domain(website)
-    if not clean_email:
-        return True
+    clean_email = normalize_email(email) if email else ""
+    domain = extract_domain(website) if website else ""
+    if not clean_email and not domain:
+        return False
 
     conn = get_connection()
     cursor = conn.cursor()
     
-    if domain:
+    if clean_email and domain:
         cursor.execute("SELECT id FROM leads WHERE email = ? OR (domain = ? AND domain != '')", (clean_email, domain))
-    else:
+    elif clean_email:
         cursor.execute("SELECT id FROM leads WHERE email = ?", (clean_email,))
+    elif domain:
+        cursor.execute("SELECT id FROM leads WHERE domain = ? AND domain != ''", (domain,))
     
     row = cursor.fetchone()
     conn.close()

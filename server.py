@@ -44,6 +44,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+MAIN_LOOP = None
+
+@app.on_event("startup")
+async def on_startup():
+    global MAIN_LOOP
+    MAIN_LOOP = asyncio.get_running_loop()
+    init_db()
+
 # Active WebSockets for live console streaming
 class ConnectionManager:
     def __init__(self):
@@ -77,17 +85,27 @@ CAMPAIGN_STATE = {
     "stop_requested": False
 }
 
-def emit_event(event_type: str, data: Any):
-    """Utility to broadcast thread-safe events to all connected WebSocket clients."""
-    loop = None
+def safe_print(text: str):
     try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        pass
-    
+        print(text)
+    except Exception:
+        try:
+            print(text.encode('ascii', errors='replace').decode('ascii'))
+        except Exception:
+            pass
+
+def emit_event(event_type: str, data: Any):
+    """Utility to broadcast thread-safe events to all connected WebSocket clients and print to console."""
+    global MAIN_LOOP
     payload = {"type": event_type, "timestamp": time.strftime("%H:%M:%S"), "data": data}
-    if loop and loop.is_running():
-        asyncio.run_coroutine_threadsafe(manager.broadcast(payload), loop)
+    msg_str = data.get("message") if isinstance(data, dict) and "message" in data else str(data)
+    safe_print(f"[{payload['timestamp']}] [{event_type.upper()}] {msg_str}")
+    
+    if MAIN_LOOP and MAIN_LOOP.is_running():
+        try:
+            asyncio.run_coroutine_threadsafe(manager.broadcast(payload), MAIN_LOOP)
+        except Exception:
+            pass
 
 def log_to_console(text: str, level: str = "info"):
     emit_event("log", {"message": text, "level": level})
@@ -126,104 +144,112 @@ class SimulateReplyRequest(BaseModel):
 # Background Worker Thread
 def run_autonomous_campaign(category: str, location: str, target_count: int, auto_send: bool):
     global CAMPAIGN_STATE
-    CAMPAIGN_STATE["is_running"] = True
-    CAMPAIGN_STATE["stop_requested"] = False
-    CAMPAIGN_STATE["target_leads"] = target_count
-    CAMPAIGN_STATE["leads_processed"] = 0
+    try:
+        CAMPAIGN_STATE["is_running"] = True
+        CAMPAIGN_STATE["stop_requested"] = False
+        CAMPAIGN_STATE["target_leads"] = target_count
+        CAMPAIGN_STATE["leads_processed"] = 0
 
-    log_to_console(f"🚀 [Engine Started] Category: '{category}' | Location: '{location}' | Goal: {target_count} leads", "start")
-    
-    # Node 1: Category & Setup
-    update_node_state("CATEGORY", 10, f"Targeting {category} in {location}")
-    time.sleep(1.0)
-
-    # Node 2: Scraping & Auto-Filter
-    update_node_state("SCRAPER", 25, "Harvesting Google Maps & Business Websites...")
-    
-    def scraper_logger(msg):
-        log_to_console(msg, "scraper")
-
-    def scraper_progress(curr, total, label):
-        pct = 25 + int((curr / total) * 35) # scale to 25%-60%
-        update_node_state("SCRAPER", pct, label)
-
-    leads = harvest_leads(
-        category=category,
-        location=location,
-        target_count=target_count,
-        log_fn=scraper_logger,
-        progress_fn=scraper_progress
-    )
-
-    if CAMPAIGN_STATE["stop_requested"]:
-        log_to_console("🛑 Campaign stopped by user.", "warning")
-        update_node_state("IDLE", 0, "Campaign Stopped")
-        CAMPAIGN_STATE["is_running"] = False
-        return
-
-    if not leads:
-        log_to_console("⚠️ No new uncontacted leads found for this query.", "warning")
-        update_node_state("IDLE", 0, "No leads discovered")
-        CAMPAIGN_STATE["is_running"] = False
-        return
-
-    # Process each lead through Auditor -> AI Hook -> Safe Dispatch
-    total_leads = len(leads)
-    for idx, lead in enumerate(leads):
-        if CAMPAIGN_STATE["stop_requested"]:
-            break
-
-        lead_id = lead.get("id")
-        biz_name = lead.get("business_name")
-        email = lead.get("email")
+        log_to_console(f"🚀 [Engine Started] Category: '{category}' | Location: '{location}' | Goal: {target_count} leads", "start")
         
-        # Node 3: Speed Auditor
-        update_node_state("AUDITOR", 60 + int((idx / total_leads) * 10), f"Auditing {biz_name} TTFB...")
-        log_to_console(f"⚡ [Auditor] Audited {biz_name}: TTFB is {lead.get('ttfb_seconds')}s", "auditor")
-        time.sleep(0.5)
+        # Node 1: Category & Setup
+        update_node_state("CATEGORY", 10, f"Targeting {category} in {location}")
+        time.sleep(1.0)
 
-        # Node 4: Gemini AI Drafter
-        update_node_state("AI_DRAFT", 70 + int((idx / total_leads) * 10), f"Drafting Hook for {biz_name}...")
-        hook_email = generate_email_1(lead)
-        log_to_console(f"✍️ [Gemini AI] Crafted Hook Subject: '{hook_email['subject']}'", "ai")
-        time.sleep(0.5)
+        # Node 2: Scraping & Auto-Filter
+        update_node_state("SCRAPER", 25, "Harvesting Google Maps & Business Websites...")
+        
+        def scraper_logger(msg):
+            log_to_console(msg, "scraper")
 
-        # Node 5: Gmail Multi-Account Sender
-        if auto_send:
-            update_node_state("SENDER", 80 + int((idx / total_leads) * 15), f"Dispatching to {email}...")
-            dispatch_result = send_email_dispatch(
-                to_email=email,
-                subject=hook_email["subject"],
-                body=hook_email["body"],
-                lead_id=lead_id,
-                step=1
-            )
-            
-            if dispatch_result.get("success"):
-                acc = dispatch_result.get("account_used")
-                sim = " [Sandbox Preview]" if dispatch_result.get("simulated") else ""
-                log_to_console(f"✉️ [Sent Email #1]{sim} To: {email} via Account: {acc}", "success")
+        def scraper_progress(curr, total, label):
+            pct = 25 + int((curr / total) * 35) # scale to 25%-60%
+            update_node_state("SCRAPER", pct, label)
+
+        leads = harvest_leads(
+            category=category,
+            location=location,
+            target_count=target_count,
+            log_fn=scraper_logger,
+            progress_fn=scraper_progress
+        )
+
+        if CAMPAIGN_STATE["stop_requested"]:
+            log_to_console("🛑 Campaign stopped by user.", "warning")
+            return
+
+        if not leads:
+            uncontacted = get_leads_list(limit=target_count, status_filter="NEW")
+            if uncontacted:
+                log_to_console(f"ℹ️ Found {len(uncontacted)} uncontacted leads in local queue. Advancing to audit & dispatch.", "info")
+                leads = uncontacted
             else:
-                log_to_console(f"❌ [Failed Email #1] To: {email}: {dispatch_result.get('error')}", "error")
+                log_to_console("⚠️ No new uncontacted leads found for this query.", "warning")
+                return
 
-            # Human-like delay between dispatches (simulated short delay in demo)
-            settings = get_settings()
-            min_delay = min(int(settings.get("min_delay_seconds", 180)), 5) # Default short pause for smoothness
-            time.sleep(min_delay)
+        # Process each lead through Auditor -> AI Hook -> Safe Dispatch
+        total_leads = len(leads)
+        for idx, lead in enumerate(leads):
+            if CAMPAIGN_STATE["stop_requested"]:
+                log_to_console("🛑 Campaign stopped during dispatch.", "warning")
+                break
 
-    # Node 6 & 7: Trigger Reply Sweep
-    update_node_state("LISTENER", 95, "Checking for replies in Gmail inboxes...")
-    replies_found = check_all_inboxes_for_replies(log_fn=lambda m: log_to_console(m, "listener"))
-    
-    if replies_found > 0:
-        update_node_state("PITCH", 100, f"Dispatched {replies_found} Hostinger Referral Pitches!")
-    else:
-        update_node_state("LISTENER", 100, "Inbox Listener Active (Awaiting Replies)")
+            lead_id = lead.get("id")
+            biz_name = lead.get("business_name")
+            email = lead.get("email")
+            
+            # Node 3: Speed Auditor
+            update_node_state("AUDITOR", 60 + int((idx / total_leads) * 10), f"Auditing {biz_name} TTFB...")
+            log_to_console(f"⚡ [Auditor] Audited {biz_name}: TTFB is {lead.get('ttfb_seconds')}s", "auditor")
+            time.sleep(0.5)
 
-    log_to_console("🎉 [Pipeline Complete] Processed all targeted leads successfully!", "success")
-    time.sleep(2.0)
-    update_node_state("IDLE", 100, "Pipeline Execution Finished")
-    CAMPAIGN_STATE["is_running"] = False
+            # Node 4: Gemini AI Drafter
+            update_node_state("AI_DRAFT", 70 + int((idx / total_leads) * 10), f"Drafting Hook for {biz_name}...")
+            hook_email = generate_email_1(lead)
+            log_to_console(f"✍️ [Gemini AI] Crafted Hook Subject: '{hook_email['subject']}'", "ai")
+            time.sleep(0.5)
+
+            # Node 5: Gmail Multi-Account Sender
+            if auto_send:
+                update_node_state("SENDER", 80 + int((idx / total_leads) * 15), f"Dispatching to {email}...")
+                dispatch_result = send_email_dispatch(
+                    to_email=email,
+                    subject=hook_email["subject"],
+                    body=hook_email["body"],
+                    lead_id=lead_id,
+                    step=1
+                )
+                
+                if dispatch_result.get("success"):
+                    acc = dispatch_result.get("account_used")
+                    sim = " [Sandbox Preview]" if dispatch_result.get("simulated") else ""
+                    log_to_console(f"✉️ [Sent Email #1]{sim} To: {email} via Account: {acc}", "success")
+                else:
+                    log_to_console(f"❌ [Failed Email #1] To: {email}: {dispatch_result.get('error')}", "error")
+
+                # Human-like delay between dispatches (simulated short delay in demo)
+                settings = get_settings()
+                min_delay = min(int(settings.get("min_delay_seconds", 180)), 5) # Default short pause for smoothness
+                time.sleep(min_delay)
+
+        # Node 6 & 7: Trigger Reply Sweep
+        update_node_state("LISTENER", 95, "Checking for replies in Gmail inboxes...")
+        replies_found = check_all_inboxes_for_replies(log_fn=lambda m: log_to_console(m, "listener"))
+        
+        if replies_found > 0:
+            update_node_state("PITCH", 100, f"Dispatched {replies_found} Hostinger Referral Pitches!")
+        else:
+            update_node_state("LISTENER", 100, "Inbox Listener Active (Awaiting Replies)")
+
+        log_to_console("🎉 [Pipeline Complete] Processed all targeted leads successfully!", "success")
+        time.sleep(1.5)
+
+    except Exception as e:
+        log_to_console(f"❌ [Engine Exception] {str(e)}", "error")
+        print(f"Engine Exception: {e}")
+    finally:
+        CAMPAIGN_STATE["is_running"] = False
+        update_node_state("IDLE", 0, "System Idle")
 
 # REST API Endpoints
 @app.get("/api/categories")

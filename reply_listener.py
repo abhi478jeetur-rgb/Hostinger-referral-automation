@@ -43,7 +43,7 @@ def check_account_for_replies(account: Dict[str, Any], log_fn: Optional[Callable
     replies_processed = 0
 
     try:
-        mail = imaplib.IMAP4_SSL("imap.gmail.com", 993, timeout=15)
+        mail = imaplib.IMAP4_SSL("imap.gmail.com", 993, timeout=6)
         mail.login(email_address, app_pwd)
         mail.select("inbox")
 

@@ -265,7 +265,8 @@ function initEventListeners() {
 
   if (btnLaunch) btnLaunch.addEventListener("click", launchHandler);
   if (btnTopStart) btnTopStart.addEventListener("click", () => {
-    document.querySelector('.tab-btn[data-tab="tab-canvas"]').click();
+    const tabEl = document.querySelector('.nav-item[data-tab="tab-canvas"]') || document.querySelector('.tab-btn[data-tab="tab-canvas"]');
+    if (tabEl) tabEl.click();
     launchHandler();
   });
 
