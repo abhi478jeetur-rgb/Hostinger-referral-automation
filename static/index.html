@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hostinger Auto-Agent | Autonomous Client Acquisition Engine v0.0.1.2</title>
+  <meta name="description" content="Autonomous 2-Step Soft Pitch Cold Outreach Engine for Hostinger Affiliate Commissions">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <div class="app-shell">
+
+    <!-- ===== LEFT SIDEBAR (CRM-Style Navigation) ===== -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark">
+          <i class="fa-solid fa-bolt-lightning"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Hostinger</span>
+          <span class="brand-sub">Auto-Agent</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <span class="nav-section-label">General</span>
+        <button class="nav-item active" data-tab="tab-canvas">
+          <i class="fa-solid fa-diagram-project"></i>
+          <span>Workflow Canvas</span>
+        </button>
+        <button class="nav-item" data-tab="tab-analytics">
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Analytics & ROI</span>
+        </button>
+        <button class="nav-item" data-tab="tab-leads">
+          <i class="fa-solid fa-address-book"></i>
+          <span>Leads & Threads</span>
+        </button>
+
+        <span class="nav-section-label">Tools</span>
+        <button class="nav-item" data-tab="tab-settings">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="ref-badge">
+          <i class="fa-solid fa-link"></i>
+          <span id="sidebar-ref-code">YYUADRASHKGH</span>
+        </div>
+        <div class="version-tag">v0.0.1.2</div>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT AREA ===== -->
+    <div class="main-wrapper">
+
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h2 class="page-title" id="page-title">Workflow Canvas</h2>
+        </div>
+        <div class="topbar-right">
+          <div class="system-badge" id="system-status-badge">
+            <span class="sys-dot"></span>
+            <span id="system-status-text">System Idle</span>
+          </div>
+          <button class="btn btn-ghost" id="btn-quick-test" title="Run 1 Instant Test Lead">
+            <i class="fa-solid fa-vial"></i> Test 1 Lead
+          </button>
+          <button class="btn btn-primary" id="btn-start-top">
+            <i class="fa-solid fa-play"></i> Start Pipeline
+          </button>
+        </div>
+      </header>
+
+      <!-- All Tab Panes -->
+      <main class="content-area">
+
+        <!-- ========== TAB 1: WORKFLOW CANVAS ========== -->
+        <section id="tab-canvas" class="tab-pane active">
+
+          <!-- Campaign Controls -->
+          <div class="campaign-bar">
+            <div class="ctrl-field">
+              <label>Target Niche</label>
+              <select id="campaign-category-select" class="input-field">
+                <option value="">Loading 100 niches...</option>
+              </select>
+            </div>
+            <div class="ctrl-field">
+              <label>City & Region</label>
+              <input type="text" id="campaign-location-input" class="input-field" value="Miami, Florida" placeholder="e.g. Austin, Texas">
+            </div>
+            <div class="ctrl-field ctrl-sm">
+              <label>Batch Goal</label>
+              <select id="campaign-target-count" class="input-field">
+                <option value="15">15 Leads</option>
+                <option value="30" selected>30 Leads</option>
+                <option value="50">50 Leads</option>
+                <option value="100">100 Leads</option>
+              </select>
+            </div>
+            <div class="ctrl-field ctrl-actions">
+              <label>&nbsp;</label>
+              <div class="btn-row">
+                <button class="btn btn-primary" id="btn-canvas-start"><i class="fa-solid fa-play"></i> Launch</button>
+                <button class="btn btn-danger" id="btn-canvas-stop" disabled><i class="fa-solid fa-stop"></i> Stop</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress -->
+          <div class="progress-strip">
+            <div class="prog-info">
+              <span id="progress-status-text">Ready to run autonomous pipeline</span>
+              <span class="prog-pct" id="progress-percentage-val">0%</span>
+            </div>
+            <div class="prog-track">
+              <div class="prog-fill" id="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Canvas Nodes (Obsidian-inspired dark canvas) -->
+          <div class="canvas-board">
+            <div class="canvas-top-row">
+              <span class="canvas-label"><i class="fa-solid fa-network-wired"></i> Pipeline Workflow</span>
+              <div class="canvas-legend">
+                <span><span class="leg-dot idle"></span> Idle</span>
+                <span><span class="leg-dot running"></span> Running</span>
+                <span><span class="leg-dot done"></span> Done</span>
+              </div>
+            </div>
+
+            <div class="nodes-flow" id="nodes-container">
+
+              <div class="wf-node" id="node-CATEGORY">
+                <div class="wf-icon"><i class="fa-solid fa-filter"></i></div>
+                <div class="wf-body">
+                  <small>Node 1</small>
+                  <strong>Niche Selector</strong>
+                  <p>100 Doc Niches</p>
+                </div>
+                <span class="wf-badge">Ready</span>
+              </div>
+
+              <div class="wf-edge"><i class="fa-solid fa-chevron-right"></i></div>
+
+              <div class="wf-node" id="node-SCRAPER">
+                <div class="wf-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+                <div class="wf-body">
+                  <small>Node 2</small>
+                  <strong>Deep Crawler</strong>
+                  <p>Auto-Filter Emails</p>
+                </div>
+                <span class="wf-badge" id="badge-scraped-count">0 Leads</span>
+              </div>
+
+              <div class="wf-edge"><i class="fa-solid fa-chevron-right"></i></div>
+
+              <div class="wf-node" id="node-AUDITOR">
+                <div class="wf-icon"><i class="fa-solid fa-gauge-high"></i></div>
+                <div class="wf-body">
+                  <small>Node 3</small>
+                  <strong>Speed Auditor</strong>
+                  <p>TTFB & Latency</p>
+                </div>
+                <span class="wf-badge" id="badge-audited-count">0 Audited</span>
+              </div>
+
+              <div class="wf-edge"><i class="fa-solid fa-chevron-right"></i></div>
+
+              <div class="wf-node" id="node-AI_DRAFT">
+                <div class="wf-icon"><i class="fa-solid fa-brain"></i></div>
+                <div class="wf-body">
+                  <small>Node 4</small>
+                  <strong>AI Drafter</strong>
+                  <p>Gemini Hook</p>
+                </div>
+                <span class="wf-badge" id="badge-draft-count">0 Hooks</span>
+              </div>
+
+              <div class="wf-edge"><i class="fa-solid fa-chevron-right"></i></div>
+
+              <div class="wf-node" id="node-SENDER">
+                <div class="wf-icon"><i class="fa-solid fa-envelope-circle-check"></i></div>
+                <div class="wf-body">
+                  <small>Node 5</small>
+                  <strong>Gmail Rotator</strong>
+                  <p>Anti-Ban Drip</p>
+                </div>
+                <span class="wf-badge" id="badge-sent-count">0 Sent</span>
+              </div>
+
+              <div class="wf-edge"><i class="fa-solid fa-chevron-right"></i></div>
+
+              <div class="wf-node" id="node-LISTENER">
+                <div class="wf-icon"><i class="fa-solid fa-inbox"></i></div>
+                <div class="wf-body">
+                  <small>Node 6</small>
+                  <strong>Inbox Listener</strong>
+                  <p>24/7 Reply Watch</p>
+                </div>
+                <span class="wf-badge" id="badge-replies-count">0 Replies</span>
+              </div>
+
+              <div class="wf-edge"><i class="fa-solid fa-chevron-right"></i></div>
+
+              <div class="wf-node" id="node-PITCH">
+                <div class="wf-icon"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                <div class="wf-body">
+                  <small>Node 7</small>
+                  <strong>Hostinger Pitch</strong>
+                  <p>Referral Link</p>
+                </div>
+                <span class="wf-badge" id="badge-pitch-count">0 Pitches</span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Live Terminal -->
+          <div class="terminal-box">
+            <div class="term-head">
+              <span><i class="fa-solid fa-terminal"></i> Agent Stream</span>
+              <button class="btn-xs" id="btn-clear-terminal"><i class="fa-solid fa-eraser"></i> Clear</button>
+            </div>
+            <div class="term-body" id="terminal-logs">
+              <div class="log-line info">
+                <span class="log-ts">[--:--:--]</span>
+                <span class="log-tag">[SYSTEM]</span>
+                <span class="log-msg">Hostinger Auto-Agent v0.0.1.2 initialized. Awaiting commands.</span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ========== TAB 2: ANALYTICS ========== -->
+        <section id="tab-analytics" class="tab-pane">
+
+          <div class="analytics-head">
+            <h3>Funnel Metrics & Earnings</h3>
+            <div class="tf-group">
+              <button class="tf-btn active" data-tf="ALL">All Time</button>
+              <button class="tf-btn" data-tf="30D">30 Days</button>
+              <button class="tf-btn" data-tf="7D">7 Days</button>
+              <button class="tf-btn" data-tf="TODAY">Today</button>
+            </div>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-icon ki-blue"><i class="fa-solid fa-magnet"></i></div>
+              <div class="kpi-data">
+                <span class="kpi-label">Clean Leads</span>
+                <h2 id="stat-total-leads">0</h2>
+                <small class="kpi-sub good">100% Valid Emails</small>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon ki-orange"><i class="fa-solid fa-paper-plane"></i></div>
+              <div class="kpi-data">
+                <span class="kpi-label">Hook Emails (#1)</span>
+                <h2 id="stat-emails-sent-1">0</h2>
+                <small class="kpi-sub">Multi-Gmail Dispatched</small>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon ki-cream"><i class="fa-solid fa-comments"></i></div>
+              <div class="kpi-data">
+                <span class="kpi-label">Client Replies</span>
+                <h2 id="stat-replies-received">0</h2>
+                <small class="kpi-sub" id="stat-reply-rate-sub">Reply Rate: 0.0%</small>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon ki-green"><i class="fa-solid fa-gift"></i></div>
+              <div class="kpi-data">
+                <span class="kpi-label">Hostinger Pitches (#2)</span>
+                <h2 id="stat-pitches-sent">0</h2>
+                <small class="kpi-sub good">Referral Links Delivered</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-columns">
+            <div class="card-block funnel-block">
+              <h4><i class="fa-solid fa-filter"></i> Conversion Funnel</h4>
+              <div class="funnel-stack">
+                <div class="funnel-row"><div class="funnel-bar fb-1" style="width:100%"><span>1. Verified Leads (100%)</span><b id="funnel-step-1">0</b></div></div>
+                <div class="funnel-row"><div class="funnel-bar fb-2" style="width:85%"><span>2. Hook Sent (~85%)</span><b id="funnel-step-2">0</b></div></div>
+                <div class="funnel-row"><div class="funnel-bar fb-3" style="width:45%"><span>3. Replies (~12%)</span><b id="funnel-step-3">0</b></div></div>
+                <div class="funnel-row"><div class="funnel-bar fb-4" style="width:30%"><span>4. Hostinger Pitched</span><b id="funnel-step-4">0</b></div></div>
+              </div>
+            </div>
+            <div class="card-block roi-block">
+              <h4><i class="fa-solid fa-calculator"></i> Commission Estimate</h4>
+              <div class="roi-rows">
+                <div class="roi-line"><span>Avg Commission / Sale</span><strong>$30 (~₹2,500)</strong></div>
+                <div class="roi-line"><span>Monthly Conversions (5 Gmails)</span><strong class="text-accent">12 – 25 Sales</strong></div>
+                <div class="roi-line roi-highlight"><span>Monthly Passive Income</span><h3>₹30,000 – ₹62,500</h3></div>
+              </div>
+              <p class="roi-note"><i class="fa-solid fa-shield-halved"></i> 100% compliant with Hostinger affiliate terms.</p>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ========== TAB 3: LEADS & THREADS ========== -->
+        <section id="tab-leads" class="tab-pane">
+
+          <div class="leads-bar">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="leads-search-input" placeholder="Search business, email, website...">
+            </div>
+            <div class="leads-actions">
+              <select id="leads-status-filter" class="input-field">
+                <option value="ALL">All Statuses</option>
+                <option value="NEW">New</option>
+                <option value="SENT_1">Email #1 Sent</option>
+                <option value="REPLIED">Client Replied</option>
+                <option value="SENT_2">Pitch Sent</option>
+              </select>
+              <button class="btn btn-ghost" id="btn-export-csv"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Business Name</th>
+                  <th>Email</th>
+                  <th>Website</th>
+                  <th>Category</th>
+                  <th>TTFB</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="leads-tbody">
+                <tr><td colspan="8" class="empty-state">No leads yet. Launch a campaign or test a lead to start.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        </section>
+
+        <!-- ========== TAB 4: SETTINGS ========== -->
+        <section id="tab-settings" class="tab-pane">
+
+          <div class="settings-split">
+
+            <!-- Gmail Pool -->
+            <div class="card-block">
+              <div class="card-head">
+                <h4><i class="fa-solid fa-envelope-open-text"></i> Gmail Account Pool</h4>
+                <p>Add Gmail accounts with App Passwords. Each sends ~20 emails/day safely.</p>
+              </div>
+
+              <div class="add-acc-form">
+                <div class="form-row-3">
+                  <div class="f-col">
+                    <label>Gmail Address</label>
+                    <input type="email" id="input-acc-email" class="input-field" placeholder="you@gmail.com">
+                  </div>
+                  <div class="f-col">
+                    <label>App Password (16-char)</label>
+                    <input type="password" id="input-acc-pwd" class="input-field" placeholder="abcd efgh ijkl mnop">
+                  </div>
+                  <div class="f-col f-col-btn">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary" id="btn-add-account"><i class="fa-solid fa-plus"></i> Connect</button>
+                  </div>
+                </div>
+                <small class="hint">Google Account → Security → 2-Step Verification → App Passwords → Create "HostingerBot".</small>
+              </div>
+
+              <div class="acc-list" id="connected-accounts-list"></div>
+            </div>
+
+            <!-- Config -->
+            <div class="card-block">
+              <div class="card-head">
+                <h4><i class="fa-solid fa-sliders"></i> Engine Configuration</h4>
+                <p>Referral link, AI key, optional cloud sync, and dispatch timing.</p>
+              </div>
+
+              <form id="settings-form" class="config-form">
+                <div class="fg">
+                  <label><i class="fa-solid fa-link"></i> Hostinger Referral Link</label>
+                  <input type="text" id="setting-ref-link" class="input-field" value="https://www.hostinger.com/in?REFERRALCODE=YYUADRASHKGH">
+                </div>
+                <div class="fg">
+                  <label><i class="fa-solid fa-key"></i> Gemini API Key (Free Tier)</label>
+                  <input type="password" id="setting-gemini-key" class="input-field" placeholder="AIzaSy... from aistudio.google.com">
+                  <small class="hint">1,500 free requests/day. If blank, built-in copy is used.</small>
+                </div>
+                <div class="form-row-2">
+                  <div class="f-col">
+                    <label><i class="fa-solid fa-database"></i> Supabase URL (Optional)</label>
+                    <input type="text" id="setting-supabase-url" class="input-field" placeholder="https://xyz.supabase.co">
+                  </div>
+                  <div class="f-col">
+                    <label><i class="fa-solid fa-lock"></i> Supabase Anon Key</label>
+                    <input type="password" id="setting-supabase-key" class="input-field" placeholder="eyJhbGciOi...">
+                  </div>
+                </div>
+                <div class="form-row-2">
+                  <div class="f-col">
+                    <label><i class="fa-solid fa-clock"></i> Min Delay (seconds)</label>
+                    <input type="number" id="setting-min-delay" class="input-field" value="180">
+                  </div>
+                  <div class="f-col">
+                    <label><i class="fa-solid fa-shield-heart"></i> Daily Limit / Account</label>
+                    <input type="number" id="setting-daily-limit" class="input-field" value="20">
+                  </div>
+                </div>
+                <div class="form-footer">
+                  <button type="submit" class="btn btn-primary" id="btn-save-settings"><i class="fa-solid fa-floppy-disk"></i> Save Configuration</button>
+                </div>
+              </form>
+            </div>
+
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal: Thread Inspector -->
+  <div class="modal-overlay" id="modal-thread-overlay">
+    <div class="modal-panel">
+      <div class="modal-top">
+        <h3 id="modal-thread-title"><i class="fa-solid fa-envelope-open-text"></i> Email Thread</h3>
+        <button class="modal-x" id="btn-close-thread-modal">&times;</button>
+      </div>
+      <div class="modal-content" id="modal-thread-body"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Test Preview -->
+  <div class="modal-overlay" id="modal-test-overlay">
+    <div class="modal-panel">
+      <div class="modal-top">
+        <h3><i class="fa-solid fa-vial"></i> Pipeline Dry Run</h3>
+        <button class="modal-x" id="btn-close-test-modal">&times;</button>
+      </div>
+      <div class="modal-content" id="modal-test-body">
+        <p>Running single pipeline test...</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/canvas.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
