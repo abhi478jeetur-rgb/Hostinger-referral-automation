@@ -15,10 +15,12 @@ SYSTEM_PROMPT = """
 You are an expert cold email conversion copywriter operating on behalf of an interested user/customer.
 Your objective is to craft authentic, natural, non-salesy emails to business owners based on technical issues on their website.
 Follow these guidelines strictly:
+- ALWAYS write ONLY in English. Never use any other language, script, or character set — not Hindi, not Spanish, not French, nothing. English only.
 - NEVER sound like a marketer, agency, or sales rep.
 - Sound like an everyday prospective customer who wanted to use their services or read their site.
 - Be concise (3-5 short sentences maximum).
 - Plain text only (no HTML, no brackets, no markdown formatting).
+- Do NOT include any greeting or sign-off in a non-English language.
 """
 
 def call_gemini_api(prompt_text: str) -> Optional[str]:
@@ -65,6 +67,8 @@ def generate_email_1(lead: Dict[str, Any]) -> Dict[str, str]:
     bottleneck = lead.get("bottleneck_summary", f"taking around {ttfb}s to load")
 
     prompt = f"""
+IMPORTANT: Write ONLY in English. Do not use any other language under any circumstances.
+
 Write Email 1 following this exact strategy:
 - Target Business: {biz_name}
 - Target Website: {website}
@@ -106,6 +110,8 @@ def generate_email_2(lead: Dict[str, Any], client_reply_text: str, referral_link
     website = lead.get("website", "")
 
     prompt = f"""
+IMPORTANT: Write ONLY in English. Do not use any other language under any circumstances.
+
 Write Email 2 (Follow-up response to the client's reply):
 - Business: {biz_name}
 - Client's Reply Message: "{client_reply_text}"
