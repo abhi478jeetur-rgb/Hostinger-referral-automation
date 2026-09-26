@@ -189,28 +189,68 @@ def harvest_via_apify(
 ) -> List[Dict[str, Any]]:
     """
     Directly triggers Apify's Google Maps Scraper Actor (compass~crawler-google-places)
-    to harvest 100% verified, real Google Maps local business listings.
+    to harvest 100% verified, real Google Maps local business listings for Tier-1 locations.
     """
+    clean_token = token.strip()
     if log_fn:
-        log_fn(f"🗺️ [Apify Google Maps] Connecting to live Google Maps API for '{category} in {location}'...")
+        log_fn(f"[Apify Google Maps] Connecting to live Google Maps API for '{category} in {location}'...")
 
-    endpoint = f"https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items?token={token.strip()}&timeout=90"
+    run_url = f"https://api.apify.com/v2/acts/compass~crawler-google-places/runs?token={clean_token}"
+    # Cap request places to safe limit within free budget
+    crawled_limit = min(max(target_count + 5, 10), 60)
     payload = {
         "searchStringsArray": [f"{category} in {location}"],
-        "maxCrawledPlacesPerSearch": min(target_count + 10, 30),
+        "maxCrawledPlacesPerSearch": crawled_limit,
         "language": "en",
         "scrapeWebsites": True,
         "scrapeContacts": True
     }
 
+    EXCLUDED_SOCIAL_HUBS = (
+        'beacons.ai', 'linktr.ee', 'instagram.com', 'facebook.com', 
+        'linkedin.com', 'twitter.com', 'x.com', 'youtube.com', 
+        'tiktok.com', 'pinterest.com', 'apple.com', 'play.google.com'
+    )
+
     try:
-        resp = requests.post(endpoint, json=payload, timeout=95)
-        if resp.status_code not in (200, 201):
+        start_res = requests.post(run_url, json=payload, timeout=25)
+        if start_res.status_code not in (200, 201):
             if log_fn:
-                log_fn(f"⚠️ Apify Google Maps run returned HTTP {resp.status_code}: {resp.text[:120]}")
+                log_fn(f"Apify start returned HTTP {start_res.status_code}: {start_res.text[:120]}")
             return []
 
-        items = resp.json()
+        run_data = start_res.json().get("data", {})
+        run_id = run_data.get("id")
+        dataset_id = run_data.get("defaultDatasetId")
+        if not run_id:
+            return []
+
+        if log_fn:
+            log_fn(f"[Apify Run {run_id[:8]}] Google Maps crawler active. Polling real-time dataset...")
+
+        # Poll status for up to 90 seconds
+        for _ in range(30):
+            time.sleep(3.0)
+            try:
+                status_res = requests.get(f"https://api.apify.com/v2/actor-runs/{run_id}?token={clean_token}", timeout=10)
+                if status_res.status_code == 200:
+                    current_status = status_res.json().get("data", {}).get("status")
+                    if current_status in ("SUCCEEDED", "READY"):
+                        break
+                    elif current_status in ("FAILED", "ABORTED", "TIMED-OUT"):
+                        if log_fn:
+                            log_fn(f"Apify run finished with status: {current_status}")
+                        return []
+            except Exception:
+                pass
+
+        # Fetch items from dataset
+        dataset_url = f"https://api.apify.com/v2/datasets/{dataset_id}/items?token={clean_token}"
+        data_res = requests.get(dataset_url, timeout=25)
+        if data_res.status_code != 200:
+            return []
+
+        items = data_res.json()
         if not isinstance(items, list):
             return []
 
@@ -219,6 +259,7 @@ def harvest_via_apify(
             title = item.get("title") or item.get("name", "")
             website = item.get("website") or item.get("url", "")
             phone = item.get("phone") or item.get("phoneUnformatted", "")
+            address = item.get("address") or item.get("street") or location
             rating = item.get("totalScore", 4.8)
             reviews = item.get("reviewsCount", 50)
             
@@ -226,11 +267,17 @@ def harvest_via_apify(
             email_val = emails[0] if emails else ""
 
             if website and "google.com" not in website and "maps" not in website:
+                # Discard social aggregator / social media profile links
+                lower_web = website.lower()
+                if any(hub in lower_web for hub in EXCLUDED_SOCIAL_HUBS):
+                    continue
+
                 discovered.append({
                     "business_name": title,
                     "website": website,
+                    "phone": phone,
                     "default_email": email_val,
-                    "location": location,
+                    "location": address if address else location,
                     "category": category,
                     "rating": rating,
                     "reviews_count": reviews
@@ -238,7 +285,7 @@ def harvest_via_apify(
         return discovered
     except Exception as e:
         if log_fn:
-            log_fn(f"⚠️ Apify Google Maps Scraper error: {str(e)}")
+            log_fn(f"Apify Google Maps Scraper error: {str(e)}")
         return []
 
 def harvest_leads(
@@ -278,48 +325,46 @@ def harvest_leads(
         if log_fn:
             log_fn("ℹ️ Tip: Connect your Free Apify API Key in Settings to scrape Google Maps directly!")
 
-    try:
-        resp = requests.post(search_url, data={"q": query}, headers=headers, timeout=10.0)
-        soup = BeautifulSoup(resp.text, 'html.parser')
-        
-        extracted_items = []
-        for result in soup.find_all('div', class_='result'):
-            title_tag = result.find('a', class_='result__title') or result.find('a', class_='result__a')
-            snippet_tag = result.find('a', class_='result__snippet')
-            url_tag = result.find('a', class_='result__url')
+    # Fallback to web search if Apify was not used or yielded 0 items
+    if not extracted_items:
+        try:
+            search_url = "https://html.duckduckgo.com/html/"
+            resp = requests.post(search_url, data={"q": query}, headers=HEADERS, timeout=10.0)
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            
+            for result in soup.find_all('div', class_='result'):
+                title_tag = result.find('a', class_='result__title') or result.find('a', class_='result__a')
+                if title_tag:
+                    title = title_tag.get_text().strip()
+                    raw_href = title_tag.get('href', '')
+                    
+                    if "uddg=" in raw_href:
+                        actual_url = requests.utils.unquote(raw_href.split("uddg=")[1].split("&")[0])
+                    else:
+                        actual_url = raw_href
 
-            if title_tag:
-                title = title_tag.get_text().strip()
-                raw_href = title_tag.get('href', '')
-                
-                # Parse actual target URL from duckduckgo redirect if present
-                if "uddg=" in raw_href:
-                    actual_url = requests.utils.unquote(raw_href.split("uddg=")[1].split("&")[0])
-                else:
-                    actual_url = raw_href
-
-                domain = extract_domain(actual_url)
-                ignored_directories = [
-                    'yelp.com', 'yellowpages.com', 'tripadvisor.com', 'facebook.com', 
-                    'instagram.com', 'linkedin.com', 'twitter.com', 'wikipedia.org',
-                    'duckduckgo.com', 'google.com', 'mapquest.com', 'bbb.org',
-                    'realtor.com', 'remax.com', 'zillow.com', 'redfin.com',
-                    'homes.com', 'houzeo.com', 'expertise.com', 'usnews.com',
-                    'angi.com', 'thumbtack.com', 'bark.com', 'clutch.co',
-                    'upcity.com', 'top10reagents.com', 'chambers.com', 'findlaw.com'
-                ]
-                if domain and not any(ign in domain for ign in ignored_directories):
-                    extracted_items.append({
-                        "business_name": title.split(" - ")[0].split(" | ")[0][:60],
-                        "website": actual_url,
-                        "location": location,
-                        "category": category,
-                        "reviews_count": 45,
-                        "rating": 4.6
-                    })
-    except Exception as e:
-        if log_fn:
-            log_fn(f"⚠️ Search discovery error: {e}")
+                    domain = extract_domain(actual_url)
+                    ignored_directories = [
+                        'yelp.com', 'yellowpages.com', 'tripadvisor.com', 'facebook.com', 
+                        'instagram.com', 'linkedin.com', 'twitter.com', 'wikipedia.org',
+                        'duckduckgo.com', 'google.com', 'mapquest.com', 'bbb.org',
+                        'realtor.com', 'remax.com', 'zillow.com', 'redfin.com',
+                        'homes.com', 'houzeo.com', 'expertise.com', 'usnews.com',
+                        'angi.com', 'thumbtack.com', 'bark.com', 'clutch.co',
+                        'upcity.com', 'top10reagents.com', 'chambers.com', 'findlaw.com'
+                    ]
+                    if domain and not any(ign in domain for ign in ignored_directories):
+                        extracted_items.append({
+                            "business_name": title.split(" - ")[0].split(" | ")[0][:60],
+                            "website": actual_url,
+                            "location": location,
+                            "category": category,
+                            "reviews_count": 45,
+                            "rating": 4.6
+                        })
+        except Exception as e:
+            if log_fn:
+                log_fn(f"⚠️ Search discovery error: {e}")
 
     # Verified Real-World Active Business Domains Registry across High-Ticket Niches
     REAL_BUSINESS_DIRECTORY = {

@@ -195,7 +195,20 @@ def save_lead(lead_data: Dict[str, Any]) -> Optional[int]:
         ))
         conn.commit()
         lead_id = cursor.lastrowid
-        sync_to_supabase("leads", {"id": lead_id, "business_name": lead_data.get("business_name"), "email": email, "website": lead_data.get("website"), "status": "NEW"})
+        sync_to_supabase("leads", {
+            "id": lead_id,
+            "business_name": lead_data.get("business_name", ""),
+            "email": email,
+            "website": lead_data.get("website", ""),
+            "domain": domain,
+            "phone": lead_data.get("phone", ""),
+            "location": lead_data.get("location", ""),
+            "category": lead_data.get("category", ""),
+            "rating": float(lead_data.get("rating", 0.0) or 0.0),
+            "reviews_count": int(lead_data.get("reviews_count", 0) or 0),
+            "ttfb_seconds": float(lead_data.get("ttfb_seconds", 0.0) or 0.0),
+            "status": "NEW"
+        })
         return lead_id
     except sqlite3.IntegrityError:
         return None
@@ -223,6 +236,17 @@ def log_email_sent(lead_id: int, account: str, step: int, message_id: str, threa
     conn.commit()
     conn.close()
 
+    # Sync log to Supabase
+    sync_to_supabase("email_logs", {
+        "lead_id": lead_id,
+        "account_used": account,
+        "step": step,
+        "message_id": message_id,
+        "thread_id": thread_id,
+        "subject": subject,
+        "body": body
+    })
+
 def log_reply_received(lead_id: int, raw_reply: str, ai_reply: str):
     conn = get_connection()
     cursor = conn.cursor()
@@ -232,6 +256,13 @@ def log_reply_received(lead_id: int, raw_reply: str, ai_reply: str):
     """, (lead_id, raw_reply, ai_reply))
     conn.commit()
     conn.close()
+
+    # Sync to Supabase
+    sync_to_supabase("replies", {
+        "lead_id": lead_id,
+        "raw_reply_text": raw_reply,
+        "ai_reply_text": ai_reply
+    })
 
 def get_settings() -> Dict[str, str]:
     conn = get_connection()

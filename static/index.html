@@ -95,16 +95,32 @@
               </select>
             </div>
             <div class="ctrl-field">
-              <label>City & Region</label>
-              <input type="text" id="campaign-location-input" class="input-field" value="Miami, Florida" placeholder="e.g. Austin, Texas">
+              <label>City & Region (Tier-1 US/UK)</label>
+              <input type="text" id="campaign-location-input" list="tier1-locations" class="input-field" value="Miami, Florida, USA" placeholder="e.g. London, United Kingdom">
+              <datalist id="tier1-locations">
+                <option value="Miami, Florida, USA">
+                <option value="Austin, Texas, USA">
+                <option value="New York, NY, USA">
+                <option value="Los Angeles, California, USA">
+                <option value="Chicago, Illinois, USA">
+                <option value="Dallas, Texas, USA">
+                <option value="Atlanta, Georgia, USA">
+                <option value="London, United Kingdom">
+                <option value="Manchester, United Kingdom">
+                <option value="Birmingham, United Kingdom">
+                <option value="Edinburgh, United Kingdom">
+              </datalist>
             </div>
             <div class="ctrl-field ctrl-sm">
               <label>Batch Goal</label>
               <select id="campaign-target-count" class="input-field">
-                <option value="15">15 Leads</option>
-                <option value="30" selected>30 Leads</option>
+                <option value="10">10 Leads</option>
+                <option value="25" selected>25 Leads</option>
                 <option value="50">50 Leads</option>
                 <option value="100">100 Leads</option>
+                <option value="250">250 Leads</option>
+                <option value="500">500 Leads</option>
+                <option value="1000">1,000 Leads (Full Batch)</option>
               </select>
             </div>
             <div class="ctrl-field ctrl-actions">
